@@ -6,7 +6,7 @@
 */
 
 (function (root, factory) {
-  if (typeof define === 'function' && define.amd) define(['jquery'], 'jquery-autosize', factory);
+  if (typeof define === 'function' && define.amd) define('jquery-autosize', ['jquery'], factory);
   else factory(root.jQuery);
 }(this, function($) {
 
