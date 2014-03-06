@@ -9,15 +9,15 @@
   var
   defaults = {
     className: 'autosizejs',
-    append: '',
-    callback: false
+    append: ''
   },
   hidden = 'hidden',
   borderBox = 'border-box',
   lineHeight = 'lineHeight',
+  overflowY = 'overflowY',
 
   // border:0 is unnecessary, but avoids a bug in FireFox on OSX
-  copy = '<textarea tabindex="-1" style="position:absolute; top:-999px; left:0; right:auto; bottom:auto; border:0; -moz-box-sizing:content-box; -webkit-box-sizing:content-box; box-sizing:content-box; word-wrap:break-word; height:0 !important; min-height:0 !important; overflow:hidden;"/>',
+  copy = '<textarea tabindex="-1" style="position:absolute !important; top:-999px !important; left:0 !important; right:auto !important; bottom:auto !important; border:0 !important; -moz-box-sizing:content-box !important; -webkit-box-sizing:content-box !important; box-sizing:content-box !important; word-wrap:break-word !important; height:0 !important; min-height:0 !important; overflow:hidden !important;"/>',
 
   // line-height is conditionally included because IE7/IE8/old Opera do not return the correct value.
   copyStyle = [
@@ -37,14 +37,15 @@
   mirrored,
 
   // the mirror element, which is used to calculate what size the mirrored element should be.
-  mirror = $(copy).data('autosize', true)[0];
+  mirror = $(copy).data('autosize', true)[0],
+  $mirror = $(mirror);
 
   // test that line-height can be accurately copied.
-  mirror.style.lineHeight = '99px';
-  if ($(mirror).css(lineHeight) === '99px') {
+  $mirror.css(lineHeight, '99px');
+  if ($mirror.css(lineHeight) === '99px') {
     copyStyle.push(lineHeight);
   }
-  mirror.style.lineHeight = '';
+  $mirror.css(lineHeight, '');
 
   $.fn.autosize = function (options) {
     options = $.extend({}, defaults, options || {});
@@ -60,8 +61,7 @@
       minHeight,
       maxHeight,
       resize,
-      boxOffset = 0,
-      callback = $.isFunction(options.callback);
+      boxOffset = 0;
 
       if ($ta.data('autosize')) {
         // exit if autosize has already been applied, or if the textarea is the mirror element.
@@ -69,7 +69,8 @@
       }
 
       if ($ta.css('box-sizing') === borderBox || $ta.css('-moz-box-sizing') === borderBox || $ta.css('-webkit-box-sizing') === borderBox){
-        boxOffset = $ta.outerHeight() - $ta.height();
+        if (!~navigator.appVersion.indexOf('MSIE 7.0'))
+          boxOffset = $ta.outerHeight() - $ta.height();
       }
 
       // IE8 and lower return 'auto', which parses to NaN, if no min-height is set.
@@ -95,7 +96,7 @@
         // This gives a cross-browser supported way getting the actual
         // height of the text, through the scrollTop property.
         $.each(copyStyle, function(i, val){
-          mirror.style[val] = $ta.css(val);
+          $mirror.css(val, $ta.css(val));
         });
 
         // The textarea overflow is probably now hidden, but Chrome doesn't reflow the text to account for the
@@ -118,12 +119,12 @@
         }
 
         mirror.value = ta.value + options.append;
-        mirror.style.overflowY = ta.style.overflowY;
-        original = parseInt(ta.style.height,10);
+        $mirror.css(overflowY, $ta.css(overflowY));
+        original = parseInt($ta.height(), 10);
 
         // Update the width in case the original textarea width has changed
         // A floor of 0 is needed because IE8 returns a negative value for hidden textareas, raising an error.
-        mirror.style.width = Math.max($ta.width(), 0) + 'px';
+        $mirror.width(Math.max($ta.width(), 0));
 
         // Needed for IE8 and lower to reliably return the correct scrollTop
         mirror.scrollTop = 0;
@@ -141,13 +142,11 @@
         }
 
         height += boxOffset;
-        ta.style.overflowY = overflow || hidden;
+        $ta.css(overflowY, overflow || hidden);
 
         if (original !== height) {
-          ta.style.height = height + 'px';
-          if (callback) {
-            options.callback.call(ta,ta);
-          }
+          $ta.css('height', height);
+          $ta.trigger('autosize');
         }
       }
 
@@ -171,12 +170,6 @@
       }
 
       $(window).on('resize', function(){
-        active = false;
-        adjust();
-      });
-
-      // Allow for manual triggering if needed.
-      $ta.on('autosize', function(){
         active = false;
         adjust();
       });
