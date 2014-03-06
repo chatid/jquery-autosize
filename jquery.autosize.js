@@ -5,7 +5,11 @@
   license: http://www.opensource.org/licenses/mit-license.php
 */
 
-(function ($) {
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) define(['jquery'], 'jquery-autosize', factory);
+  else factory(root.jQuery);
+}(this, function($) {
+
   var
   defaults = {
     className: 'autosizejs',
@@ -178,4 +182,5 @@
       adjust();
     });
   };
-}(window.jQuery || window.Zepto));
+
+}));
